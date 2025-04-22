@@ -20,17 +20,23 @@ key_gen() ->
             Key
     end.
 
-encrypt(Key, Data) ->
+
+encrypt([],[]) ->
+    done;
+
+encrypt([KH|KT], Data) ->
     IV = <<0:128>>,
     AAD = "harpy",
-    {Encrypt, Tag} = crypto:crypto_one_time_aead(aes_256_gcm, Key, IV, Data, AAD, true),
+    {Encrypt, Tag} = crypto:crypto_one_time_aead(aes_256_gcm, KH, IV, Data, AAD, true),
     Tag2 = binary_to_list(Tag),
     Tag3 = Tag2 ++ [10],
     Verify = file:write_file("verify.txt", Tag3, [append]),
     case Verify of
         ok -> io:format("encrypted~n");
         {error, Error} -> io:format("Error: ~w~n", [Error])
-    end.
+    end,
+    encrypt(KT,Data).
+    
 
 decrypt(Key, Data, Tag) ->
     IV = <<0:128>>,
