@@ -1,12 +1,17 @@
 -module(lib).
 -export([data/1]).
 
-data(File) ->
-    F = file:read_file(File),
+
+
+data([]) ->
+    none;
+
+data([Head|Tail]) ->
+    F = file:read_file(Head),
     case F of
         {ok, Data} ->
             Data;
         {error, Reason} ->
             io:format("Error: ~w ~n", [Reason])
-    end.
-
+    end,
+    data(Tail).
