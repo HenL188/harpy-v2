@@ -1,8 +1,12 @@
 -module(encryption).
 -export([key_gen/0, encrypt/2, decrypt/3]).
 
-key_gen() ->
-    Input = io:get_line("Enter passkey: "),
+key_gen(N, List, B) ->
+    if
+        B == true ->
+            Input = io:get_line("Enter passkey: "),
+            B = false
+    end,
     _ = crypto:rand_seed_alg(crypto_aes, Input),
     Length = iolist_size(Input),
     if
@@ -10,19 +14,27 @@ key_gen() ->
             Bytes = 32 - Length,
             Rand = crypto:strong_rand_bytes(Bytes),
             R = binary_to_list(Rand),
-            Key = lists:append(Input, R),
-            Key;
+            K = lists:append(Input, R),
+            Key = list_to_binary(K),
+            Keys = lists:append(List,Key);
         Length > 32 ->
             io:format("Passkey bigger than 32 bytes"),
-            key_gen();
+            B = true,
+            key_gen(N,List,B);
         true ->
-            Key = Input,
-            Key
+            Keys = lists:append(List,Input)
+    end,
+    if
+        N > 0 -> N - 1, key_gen(N,Keys,B);
+        true -> Keys
     end.
-
 
 encrypt([],[]) ->
     done;
+
+encrypt([],Data) ->
+    Reason = "No key",
+    {error, Reason};
 
 encrypt([KH|KT], Data) ->
     IV = <<0:128>>,
