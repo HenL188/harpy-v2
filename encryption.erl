@@ -1,12 +1,7 @@
 -module(encryption).
--export([key_gen/0, encrypt/2, decrypt/3]).
+-export([key_gen/3, encrypt/2, decrypt/3]).
 
-key_gen(N, List, B) ->
-    if
-        B == true ->
-            Input = io:get_line("Enter passkey: "),
-            B = false
-    end,
+key_gen(List, B, Input) ->
     _ = crypto:rand_seed_alg(crypto_aes, Input),
     Length = iolist_size(Input),
     if
@@ -14,41 +9,37 @@ key_gen(N, List, B) ->
             Bytes = 32 - Length,
             Rand = crypto:strong_rand_bytes(Bytes),
             R = binary_to_list(Rand),
-            K = lists:append(Input, R),
-            Key = list_to_binary(K),
-            Keys = lists:append(List,Key);
+            Keyl = lists:append(Input, R),
+            Key = list_to_binary(Keyl),
+            Keys = lists:append(List, [Key]),
+            Keys;
         Length > 32 ->
-            io:format("Passkey bigger than 32 bytes"),
+            io:format("Passkey bigger than 32 bytes~n"),
+            io:format("Generating random key~n"),
+            Keys = List,
             B = true,
-            key_gen(N,List,B);
+            key_gen(Keys, B, Input);
         true ->
-            Keys = lists:append(List,Input)
-    end,
-    if
-        N > 0 -> N - 1, key_gen(N,Keys,B);
-        true -> Keys
+            Keys = lists:append(List, Input),
+            Keys
     end.
 
-encrypt([],[]) ->
+encrypt([], []) ->
     done;
-
-encrypt([],Data) ->
+encrypt([], _) ->
     Reason = "No key",
     {error, Reason};
-
-encrypt([KH|KT], Data) ->
+encrypt([KH | KT], Data) ->
     IV = <<0:128>>,
     AAD = "harpy",
+    io:format("~w~n", [Data]),
     {Encrypt, Tag} = crypto:crypto_one_time_aead(aes_256_gcm, KH, IV, Data, AAD, true),
-    Tag2 = binary_to_list(Tag),
-    Tag3 = Tag2 ++ [10],
-    Verify = file:write_file("verify.txt", Tag3, [append]),
+    Verify = file:write_file("verify.txt", Tag),
     case Verify of
-        ok -> io:format("encrypted~n");
+        ok -> ok;
         {error, Error} -> io:format("Error: ~w~n", [Error])
     end,
-    encrypt(KT,Data).
-    
+    encrypt(KT, Data).
 
 decrypt(Key, Data, Tag) ->
     IV = <<0:128>>,

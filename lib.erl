@@ -1,20 +1,19 @@
 -module(lib).
--export([data/1, input/0]).
+-import(encryption, [encrypt/2, decrypt/3, key_gen/3]).
+-export([data/2, input/0]).
 
-
-
-data([]) ->
+data([], _) ->
     none;
-
-data([Head|Tail]) ->
+data([Head | Tail], Input) ->
+    Key = key_gen([], true, Input),
     F = file:read_file(Head),
     case F of
         {ok, Data} ->
-            Data;
+            encrypt(Key, Data);
         {error, Reason} ->
             io:format("Error: ~w ~n", [Reason])
     end,
-    data(Tail).
+    data(Tail, Input).
 
 parse() ->
     Input = io:get_line("Enter: "),
@@ -22,10 +21,7 @@ parse() ->
     Files = string:split(Chomp, " "),
     Files.
 
-
 input() ->
     Files = parse(),
-    io:format(Files),
-    data(Files).
-    
-    
+    Input = io:get_line("Enter passkey: "),
+    data(Files, Input).
