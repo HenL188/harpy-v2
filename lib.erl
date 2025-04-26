@@ -1,5 +1,5 @@
 -module(lib).
--import(encryption, [encrypt/2, decrypt/3, key_gen/3]).
+-import(encryption, [encrypt/3, decrypt/4, key_gen/3]).
 -export([data/2, input/0]).
 
 data([], _) ->
@@ -9,7 +9,7 @@ data([Head | Tail], Input) ->
     F = file:read_file(Head),
     case F of
         {ok, Data} ->
-            encrypt(Key, Data);
+            encrypt(Key, Data, [Head | Tail]);
         {error, Reason} ->
             io:format("Error: ~w ~n", [Reason])
     end,
